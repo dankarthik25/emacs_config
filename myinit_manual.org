@@ -210,7 +210,15 @@
 #+END_SRC
 
 #+RESULTS:
-*  modeline
+* Word stuff
+#+BEGIN_SRC emacs-lisp
+  (use-package dictionary
+    :ensure t)
+  (use-package synosaurus
+    :ensure t)
+
+#+END_SRC
+* modeline
 #+begin_src emacs-lisp
 (require 'doom-modeline)
 (use-package doom-modeline      :ensure t)
@@ -336,11 +344,9 @@
                 (sit-for 0.1)
                 (git-gutter:clear))
          :color blue))
-
-
-
 #+END_SRC
 * Load other files
+
    #+BEGIN_SRC emacs-lisp
      (defun load-if-exists (f)
        "load the elisp file only if it exists and is readable"
@@ -387,13 +393,6 @@
 
 #+RESULTS:
 : better-shell-remote-open
-
-
-
-
-
-
-
 * PDF tools
 #+BEGIN_SRC emacs-lisp
 
@@ -422,27 +421,15 @@
 #+END_SRC
 * Counsel-spotify
 #+begin_src emacs-lisp
-
 (setq counsel-spotify-client-id "ce31becb1af94921907671e4bfa7f558")
 (setq counsel-spotify-client-secret "9433b011b7094b2b8c4eb0255b8249e3")
 (use-package counsel-spotify
-:ensure t
-:config
-(require 'counsel-spotify)
+ :ensure t
+ :config
+ (require 'counsel-spotify)
 )
 #+end_src
-* Word stuff
-#+BEGIN_SRC emacs-lisp
-  (use-package dictionary
-    :ensure t)
-
-  (use-package synosaurus
-    :ensure t)
-
-#+END_SRC
-
-
 * ---------------------------
-* org-Agenda 
+* TODO org-Agenda 
 ** birthday of family and friends
 https://www.youtube.com/watch?v=PNE-mgkZ6HM
