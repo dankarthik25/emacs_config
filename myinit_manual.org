@@ -1,0 +1,448 @@
+#+STARTUP: overview 
+#+PROPERTY: header-args :comments yes :results silent
+* repos
+
+
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+#+END_SRC
+* interface tweaks
+#+BEGIN_SRC emacs-lisp
+(setq inhibit-startup-message t)
+(tool-bar-mode -1)
+(fset 'yes-or-no-p 'y-or-n-p)
+(global-set-key (kbd "<f5>") 'revert-buffer)
+#+END_SRC
+
+* which key
+  Brings up some help
+  #+BEGIN_SRC emacs-lisp
+    (use-package which-key
+      :ensure t 
+      :config
+      (which-key-mode))
+#+END_SRC
+
+* Org mode
+  Org bullets makes things look pretty
+  #+BEGIN_SRC emacs-lisp
+
+        (use-package org 
+          :ensure t
+          :pin org)
+
+        (setenv "BROWSER" "firefox")
+        (use-package org-bullets
+          :ensure t
+          :config
+          (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+        (custom-set-variables
+         '(org-directory "~/Sync/orgfiles")
+         '(org-default-notes-file (concat org-directory "/notes.org"))
+         '(org-export-html-postamble nil)
+         '(org-hide-leading-stars t)
+         '(org-startup-folded (quote overview))
+         '(org-startup-indented t)
+         '(org-confirm-babel-evaluate nil)
+         '(org-src-fontify-natively t)
+         )
+    ;;    (global-visual-line-mode 1)  ;; Stop wrapping of text in org
+        (add-hook 'text-mode-hook #'turn-on-visual-line-mode) ;; Don't add newline to doc but only wrap text for visual/display only.
+        (setq org-file-apps
+              (append '(
+                        ("\\.pdf\\'" . "evince %s")
+                        ("\\.x?html?\\'" . "/usr/bin/firefox %s")
+                        ) org-file-apps ))
+
+        (global-set-key "\C-ca" 'org-agenda)
+        (setq org-agenda-start-on-weekday nil)
+        (setq org-agenda-custom-commands
+              '(("c" "Simple agenda view"
+                 ((agenda "")
+                  (alltodo "")))))
+
+        (global-set-key (kbd "C-c c") 'org-capture)
+
+        (setq org-agenda-files (list "~/Sync/orgfiles/gcal.org"
+                                     "~/Sync/orgfiles/soe-cal.org"
+                                     "~/Sync/orgfiles/i.org"
+                                     "~/Sync/orgfiles/schedule.org"))
+        (setq org-capture-templates
+              '(("a" "Appointment" entry (file  "~/Sync/orgfiles/gcal.org" )
+                 "* %?\n\n%^T\n\n:PROPERTIES:\n\n:END:\n\n")
+                ("l" "Link" entry (file+headline "~/Sync/orgfiles/links.org" "Links")
+                 "* %? %^L %^g \n%T" :prepend t)
+                ("b" "Blog idea" entry (file+headline "~/Sync/orgfiles/i.org" "Blog Topics:")
+                 "* %?\n%T" :prepend t)
+                ("t" "To Do Item" entry (file+headline "~/Sync/orgfiles/i.org" "To Do and Notes")
+                 "* TODO %?\n%u" :prepend t)
+                ("m" "Mail To Do" entry (file+headline "~/Sync/orgfiles/i.org" "To Do and Notes")
+                 "* TODO %a\n %?" :prepend t)
+                ("g" "GMail To Do" entry (file+headline "~/Sync/orgfiles/i.org" "To Do and Notes")
+                 "* TODO %^L\n %?" :prepend t)
+                ("n" "Note" entry (file+headline "~/Sync/orgfiles/i.org" "Notes")
+                 "* %u %? " :prepend t)
+                ))
+  
+
+        (defadvice org-capture-finalize 
+            (after delete-capture-frame activate)  
+          "Advise capture-finalize to close the frame"  
+          (if (equal "capture" (frame-parameter nil 'name))  
+              (delete-frame)))
+
+        (defadvice org-capture-destroy 
+            (after delete-capture-frame activate)  
+          "Advise capture-destroy to close the frame"  
+          (if (equal "capture" (frame-parameter nil 'name))  
+              (delete-frame)))  
+
+        (use-package noflet
+          :ensure t )
+        (defun make-capture-frame ()
+          "Create a new frame and run org-capture."
+          (interactive)
+          (make-frame '((name . "capture")))
+          (select-frame-by-name "capture")
+          (delete-other-windows)
+          (noflet ((switch-to-buffer-other-window (buf) (switch-to-buffer buf)))
+            (org-capture)))
+    ;; (require 'ox-beamer)
+    ;; for inserting inactive dates
+        (define-key org-mode-map (kbd "C-c >") (lambda () (interactive (org-time-stamp-inactive))))
+
+        (use-package htmlize :ensure t)
+
+        (setq org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar")
+
+  #+END_SRC
+
+  #+RESULTS:
+  : make-capture-frame
+
+* Swiper / Ivy / Counsel
+  Swiper gives us a really efficient incremental search with regular expressions
+  and Ivy / Counsel replace a lot of ido or helms completion functionality
+  #+BEGIN_SRC emacs-lisp
+  
+
+
+
+   (use-package counsel
+:ensure t
+  :bind
+  (("M-y" . counsel-yank-pop)
+   :map ivy-minibuffer-map
+   ("M-y" . ivy-next-line)))
+
+
+
+
+  (use-package ivy
+  :ensure t
+  :diminish (ivy-mode)
+  :bind (("C-x b" . ivy-switch-buffer))
+  :config
+  (ivy-mode 1)
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-count-format "%d/%d ")
+  (setq ivy-display-style 'fancy))
+
+
+  (use-package swiper
+  :ensure t
+  :bind (("C-s" . swiper-isearch)
+	 ("C-r" . swiper-isearch)
+	 ("C-c C-r" . ivy-resume)
+	 ("M-x" . counsel-M-x)
+	 ("C-x C-f" . counsel-find-file))
+  :config
+  (progn
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-display-style 'fancy)
+    (define-key read-expression-map (kbd "C-r") 'counsel-expression-history)
+    ))
+  #+END_SRC
+
+* Avy - navigate by searching for a letter on the screen and jumping to it
+  See https://github.com/abo-abo/avy for more info
+  #+BEGIN_SRC emacs-lisp
+  (use-package avy
+  :ensure t
+  :bind ("M-s" . avy-goto-word-1)) ;; changed from char as per jcs
+  #+END_SRC
+
+* Company
+#+BEGIN_SRC emacs-lisp
+(use-package company
+:ensure t
+:config
+(setq company-idle-delay 0)
+(setq company-minimum-prefix-length 3)
+
+(global-company-mode t)
+)
+
+
+(defun my/python-mode-hook ()
+  (add-to-list 'company-backends 'company-jedi))
+
+(add-hook 'python-mode-hook 'my/python-mode-hook)
+(use-package company-jedi
+    :ensure t
+    :config
+    (add-hook 'python-mode-hook 'jedi:setup)
+       )
+
+(defun my/python-mode-hook ()
+  (add-to-list 'company-backends 'company-jedi))
+
+(add-hook 'python-mode-hook 'my/python-mode-hook)
+
+;; company box mode
+;(use-package company-box
+;:ensure t
+;  :hook (company-mode . company-box-mode)) 
+
+
+#+END_SRC
+
+#+RESULTS:
+*  modeline
+#+begin_src emacs-lisp
+(require 'doom-modeline)
+(use-package doom-modeline      :ensure t)
+(doom-modeline-init)
+#+end_src
+
+* Themes 
+  #+BEGIN_SRC emacs-lispc 
+
+    (use-package color-theme-modern :ensure t)
+    (use-package zenburn-theme :ensure t)
+    (use-package base16-theme :ensure t )
+    (use-package moe-theme :ensure t)
+    (use-package alect-themes     :ensure t)
+    (use-package zerodark-theme        :ensure t)
+    (use-package faff-theme      :ensure t)
+    (use-package poet-theme      :ensure t)
+    (use-package tao-theme      :ensure t)
+    (use-package doom-themes      :ensure t)
+;;    (use-package spacemacs-theme :ensure t)
+;;(load-theme 'faff t)
+
+;;(load-theme 'faff t)
+  #+END_SRC
+** Load Themes
+  #+begin_src emacs-lisp
+(load-theme 'spacemacs-light t)
+;;(load-theme 'spacemacs-dark t)
+  
+  #+end_src
+  
+* Misc packages
+  #+BEGIN_SRC emacs-lisp
+
+  ; Highlights the current cursor line
+  (global-hl-line-mode t)
+  
+  ; flashes the cursor's line when you scroll
+  (use-package beacon
+  :ensure t
+  :config
+  (beacon-mode 1)
+  ; (setq beacon-color "#666600")
+  )
+  
+  ; deletes all the whitespace when you hit backspace or delete
+  (use-package hungry-delete
+  :ensure t
+  :config
+  (global-hungry-delete-mode))
+  
+
+  (use-package multiple-cursors
+  :ensure t)
+
+  ; expand the marked region in semantic increments (negative prefix to reduce region)
+  (use-package expand-region
+  :ensure t
+  :config 
+  (global-set-key (kbd "C-=") 'er/expand-region))
+
+(setq save-interprogram-paste-before-kill t)
+
+
+(global-auto-revert-mode 1) ;; you might not want this
+(setq auto-revert-verbose nil) ;; or this
+(global-set-key (kbd "<f5>") 'revert-buffer)
+(global-set-key (kbd "<f6>") 'revert-buffer)
+
+
+  
+  #+END_SRC
+
+
+
+
+* git(magit)
+#+BEGIN_SRC emacs-lisp
+  (use-package magit
+    :ensure t
+    :init
+    (progn
+    (bind-key "C-x g" 'magit-status)
+    ))
+
+(setq magit-status-margin
+  '(t "%Y-%m-%d %H:%M " magit-log-margin-width t 18))
+    (use-package git-gutter
+    :ensure t
+    :init
+    (global-git-gutter-mode +1))
+
+    (global-set-key (kbd "M-g M-g") 'hydra-git-gutter/body)
+
+
+    (use-package git-timemachine
+    :ensure t
+    )
+  (defhydra hydra-git-gutter (:body-pre (git-gutter-mode 1)
+                              :hint nil)
+    "
+  Git gutter:
+    _j_: next hunk        _s_tage hunk     _q_uit
+    _k_: previous hunk    _r_evert hunk    _Q_uit and deactivate git-gutter
+    ^ ^                   _p_opup hunk
+    _h_: first hunk
+    _l_: last hunk        set start _R_evision
+  "
+    ("j" git-gutter:next-hunk)
+    ("k" git-gutter:previous-hunk)
+    ("h" (progn (goto-char (point-min))
+                (git-gutter:next-hunk 1)))
+    ("l" (progn (goto-char (point-min))
+                (git-gutter:previous-hunk 1)))
+    ("s" git-gutter:stage-hunk)
+    ("r" git-gutter:revert-hunk)
+    ("p" git-gutter:popup-hunk)
+    ("R" git-gutter:set-start-revision)
+    ("q" nil :color blue)
+    ("Q" (progn (git-gutter-mode -1)
+                ;; git-gutter-fringe doesn't seem to
+                ;; clear the markup right away
+                (sit-for 0.1)
+                (git-gutter:clear))
+         :color blue))
+
+
+
+#+END_SRC
+* Load other files
+   #+BEGIN_SRC emacs-lisp
+     (defun load-if-exists (f)
+       "load the elisp file only if it exists and is readable"
+       (if (file-readable-p f)
+           (load-file f)))
+
+     (load-if-exists "~/Sync/shared/mu4econfig.el")
+     (load-if-exists "~/Sync/shared/not-for-github.el")
+
+   #+END_SRC
+
+   #+RESULTS:
+   : t
+
+* All the icons
+
+#+BEGIN_SRC emacs-lisp
+(use-package all-the-icons 
+:ensure t
+:defer 0.5)
+
+(use-package all-the-icons-ivy
+:ensure t
+  :after (all-the-icons ivy)
+  :custom (all-the-icons-ivy-buffer-commands '(ivy-switch-buffer-other-window ivy-switch-buffer))
+  :config
+  (add-to-list 'all-the-icons-ivy-file-commands 'counsel-dired-jump)
+  (add-to-list 'all-the-icons-ivy-file-commands 'counsel-find-library)
+  (all-the-icons-ivy-setup))
+
+
+(use-package all-the-icons-dired :ensure t)
+(add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+
+#+END_SRC
+
+* Better Shell
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package better-shell
+      :ensure t
+      :bind (("C-\"" . better-shell-shell)
+             ("C-:" . better-shell-remote-open)))
+#+END_SRC
+
+#+RESULTS:
+: better-shell-remote-open
+
+
+
+
+
+
+
+* PDF tools
+#+BEGIN_SRC emacs-lisp
+
+(require 'pdf-tools)
+
+(use-package pdf-tools
+:ensure t)
+
+;;(require 'org-pdfview)
+;;(use-package org-pdfview :ensure t)
+
+#+END_SRC
+* auto-yasnippet
+#+BEGIN_SRC emacs-lisp
+(use-package auto-yasnippet
+:ensure t)
+#+END_SRC
+
+* PATH 
+#+BEGIN_SRC emacs-lisp
+(use-package exec-path-from-shell
+:ensure t
+:config
+(exec-path-from-shell-initialize)
+)
+#+END_SRC
+* Counsel-spotify
+#+begin_src emacs-lisp
+
+(setq counsel-spotify-client-id "ce31becb1af94921907671e4bfa7f558")
+(setq counsel-spotify-client-secret "9433b011b7094b2b8c4eb0255b8249e3")
+(use-package counsel-spotify
+:ensure t
+:config
+(require 'counsel-spotify)
+)
+#+end_src
+* Word stuff
+#+BEGIN_SRC emacs-lisp
+  (use-package dictionary
+    :ensure t)
+
+  (use-package synosaurus
+    :ensure t)
+
+#+END_SRC
+
+
+* ---------------------------
+* org-Agenda 
+** birthday of family and friends
+https://www.youtube.com/watch?v=PNE-mgkZ6HM
