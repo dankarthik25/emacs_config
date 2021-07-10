@@ -726,7 +726,16 @@
 
 #+RESULTS:
 
-* git
+* magit
+To open magit for a file : C-x g
+to show shortcut in magit type : h
+
+To Unstage : u or U
+To stage : s or S
+To commit : press C > Enter to Commit file > Write commit msg > C-c C-c to save and exit the commit
+To push   : press P > press u > github usr/pwd
+
+
 #+BEGIN_SRC emacs-lisp
   (use-package magit
     :ensure t
@@ -775,9 +784,6 @@
                 (sit-for 0.1)
                 (git-gutter:clear))
          :color blue))
-
-
-
 #+END_SRC
 * Load other files
    #+BEGIN_SRC emacs-lisp
